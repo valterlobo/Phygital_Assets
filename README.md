@@ -64,3 +64,10 @@ $ forge --help
 $ anvil --help
 $ cast --help
 ```
+
+
+forge script script/PhygitalAssetsDeploy.s.sol:PhygitalAssetsDeployScript --rpc-url $TESTRPC --broadcast -vvv
+
+
+PhygitalAssetsMintScript
+
