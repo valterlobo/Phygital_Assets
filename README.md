@@ -1,17 +1,25 @@
+
+# Phygital Assets 
+A plataforma Phygital Assets é um ecossistema que integra ativos físicos ao mundo digital, permitindo a tokenização de bens tangíveis através de NFTs (Non-Fungible Tokens).
+
+
+
+## DEPLOY 
+forge script script/PhygitalAssetsDeploy.s.sol:PhygitalAssetsDeployScript --rpc-url $TESTRPC --broadcast -vvv
+
+## MINT 
+forge script script/PhygitalAssetsMint.s.sol:PhygitalAssetsMintScript --rpc-url $TESTRPC --broadcast -vvv
+
+
+## LEMBRE-SE 
+
+  #### Renomear o .env.example para .env e colocar as suas informações conta , provider (infura, alchemy), chaves.
+
+
+
+
 ## Foundry
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
 
 ## Usage
 
@@ -66,8 +74,4 @@ $ cast --help
 ```
 
 
-forge script script/PhygitalAssetsDeploy.s.sol:PhygitalAssetsDeployScript --rpc-url $TESTRPC --broadcast -vvv
-
-
-PhygitalAssetsMintScript
 
