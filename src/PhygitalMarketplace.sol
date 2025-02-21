@@ -61,7 +61,7 @@ contract PhygitalMarketplace is ERC1155Holder, Ownable, ReentrancyGuard {
         emit ItemSold(msg.sender, seller, tokenId, amount, msg.value);
     }
 
-    function removeListing(uint256 tokenId) external {
+    function removeListing(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId][msg.sender];
         require(listing.active, "Listing not active");
 

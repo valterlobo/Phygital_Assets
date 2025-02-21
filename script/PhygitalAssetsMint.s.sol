@@ -8,11 +8,16 @@ contract PhygitalAssetsMintScript is Script {
     function setUp() public {}
 
     function run() public {
-        uint256 ownerPrivateKey = vm.envUint("OWNER_PK");
+        uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(ownerPrivateKey);
         address assetsContract = vm.envAddress("MINT_CONTRACT");
         PhygitalAssets phygitalAssets = PhygitalAssets(payable(assetsContract));
         console.log(address(phygitalAssets));
+
+        
+        phygitalAssets.createAsset(
+            "Anel Sol Dourado #0", "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/0.json", 10, true
+        );
 
         phygitalAssets.createAsset(
             "Anel Sol Dourado", "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/1.json", 10, true

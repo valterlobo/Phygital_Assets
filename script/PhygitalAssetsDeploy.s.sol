@@ -13,7 +13,6 @@ contract PhygitalAssetsDeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         address initialOwner = vm.envAddress("OWNER");
-        vm.startBroadcast();
         phygitalAssets = new PhygitalAssets(initialOwner);
         vm.stopBroadcast();
     }

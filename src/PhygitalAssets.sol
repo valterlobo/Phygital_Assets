@@ -18,46 +18,46 @@ contract PhygitalAssets is ERC1155, Ownable {
 
     constructor(address initialOwner) ERC1155("") Ownable(initialOwner) {}
 
-    function createAsset(string memory _name, string calldata _uri, uint256 _maxSupply, bool _supplyCapped)
+    function createAsset(string memory nm, string calldata ur, uint256 maxSupply, bool supplyCapped)
         external
         onlyOwner
     {
         uint256 tokenId = nextTokenId++;
         assets[tokenId] = Asset({
             id: tokenId,
-            name: _name,
+            name: nm,
             totalSupply: 0,
-            maxSupply: _maxSupply,
-            supplyCapped: _supplyCapped,
-            uri: _uri
+            maxSupply: maxSupply,
+            supplyCapped: supplyCapped,
+            uri: ur
         });
-        emit AssetCreated(tokenId, _name, _maxSupply, _supplyCapped);
+        emit AssetCreated(tokenId, nm, maxSupply, supplyCapped);
     }
 
-    function mintAsset(uint256 _tokenId, address _to, uint256 _amount) external onlyOwner {
-        require(bytes(assets[_tokenId].name).length > 0, "Asset does not exist");
+    function mintAsset(uint256 tokenId, address to, uint256 amount) external onlyOwner {
+        require(bytes(assets[tokenId].name).length > 0, "Asset does not exist");
 
-        if (assets[_tokenId].supplyCapped) {
-            require(assets[_tokenId].totalSupply + _amount <= assets[_tokenId].maxSupply, "Max supply reached");
+        if (assets[tokenId].supplyCapped) {
+            require(assets[tokenId].totalSupply + amount <= assets[tokenId].maxSupply, "Max supply reached");
         }
 
-        assets[_tokenId].totalSupply += _amount;
-        if (!assets[_tokenId].supplyCapped) {
-            assets[_tokenId].maxSupply = assets[_tokenId].totalSupply;
+        assets[tokenId].totalSupply += amount;
+        if (!assets[tokenId].supplyCapped) {
+            assets[tokenId].maxSupply = assets[tokenId].totalSupply;
         }
 
-        _mint(_to, _tokenId, _amount, "");
-        emit AssetMinted(_tokenId, _to, _amount);
+        _mint(to, tokenId, amount, "");
+        emit AssetMinted(tokenId, to, amount);
     }
 
-    function uri(uint256 _tokenId) public view override(ERC1155) returns (string memory) {
-        require(bytes(assets[_tokenId].name).length > 0, "Asset does not exist");
-        return assets[_tokenId].uri;
+    function uri(uint256 tokenId) public view override(ERC1155) returns (string memory) {
+        require(bytes(assets[tokenId].name).length > 0, "Asset does not exist");
+        return assets[tokenId].uri;
     }
 
-    function setUri(uint256 _tokenId, string memory _newUri) external onlyOwner returns (string memory) {
-        require(bytes(assets[_tokenId].name).length > 0, "Asset does not exist");
-        assets[_tokenId].uri = _newUri;
-        return assets[_tokenId].uri;
+    function setUri(uint256 tokenId, string memory newUri) external onlyOwner returns (string memory) {
+        require(bytes(assets[tokenId].name).length > 0, "Asset does not exist");
+        assets[tokenId].uri = newUri;
+        return assets[tokenId].uri;
     }
 }
