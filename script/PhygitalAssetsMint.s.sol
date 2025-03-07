@@ -14,63 +14,75 @@ contract PhygitalAssetsMintScript is Script {
         PhygitalAssets phygitalAssets = PhygitalAssets(payable(assetsContract));
         console.log(address(phygitalAssets));
 
-        
         phygitalAssets.createAsset(
-            "Anel Sol Dourado #0", "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/0.json", 10, true
+            100,
+            "Anel Sol Dourado #0",
+            "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/100.json",
+            10,
+            true
         );
 
         phygitalAssets.createAsset(
-            "Anel Sol Dourado", "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/1.json", 10, true
+            1, "Anel Sol Dourado", "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/1.json", 10, true
         );
         phygitalAssets.createAsset(
+            2,
             unicode"Colar Maré Prateada",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/2.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            3,
             "Pulseira Brisa Leve",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/3.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            4,
             unicode"Brinco Pôr do Sol",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/4.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            5,
             "Tornozeleira Areia Dourada",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/5.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            6,
             "Pingente Estrela do Mar",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/6.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            7,
             "Bracelete Oceano Azul",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/7.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            8,
             unicode"Aliança do Horizonte",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/8.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            9,
             "Broche Concha Dourada",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/9.json",
             100,
             true
         );
         phygitalAssets.createAsset(
+            10,
             "Cinto de Corrente Marinha",
             "ipfs://bafybeiaalsgsj6xdu7fgf3lasyaftgudn2fbnglj4d6cyaynvfjvrevvta/10.json",
             100,
