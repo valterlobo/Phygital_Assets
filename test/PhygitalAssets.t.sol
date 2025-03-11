@@ -15,6 +15,77 @@ contract PhygitalAssetsTest is Test {
         phygitalAssets = new PhygitalAssets(owner, "JOIAS COLECAO VERAO", "JOIAVERAO", "https://example.com/metadata/");
     }
 
+    //test constructor
+
+    // Test successful deployment with valid parameters
+    function testConstructorSuccess() public {
+        address ow = address(0x123);
+        address zeroAddress = address(0);
+        string memory name = "PhygitalAssets";
+        string memory symbol = "PGA";
+        string memory uri = "https://example.com/metadata/";
+        vm.prank(owner);
+        PhygitalAssets phygitalAssets1 = new PhygitalAssets(ow, name, symbol, uri);
+
+        // Check if the contract was initialized correctly
+        assertEq(phygitalAssets1.owner(), ow);
+        assertEq(phygitalAssets1.name(), name);
+        assertEq(phygitalAssets1.symbol(), symbol);
+        assertEq(phygitalAssets1.contractURI(), uri);
+    }
+
+    // Test deployment with zero address as owner
+    function testConstructorWithZeroAddress() public {
+        address zeroAddress = address(0);
+        string memory name = "PhygitalAssets";
+        string memory symbol = "PGA";
+        string memory uri = "https://example.com/metadata/";
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, zeroAddress));
+        new PhygitalAssets(zeroAddress, name, symbol, uri);
+    }
+
+    // Test deployment with empty name
+    function testConstructorWithEmptyName() public {
+        address ow = address(0x123);
+        address zeroAddress = address(0);
+        string memory name = "PhygitalAssets";
+        string memory symbol = "PGA";
+        string memory uri = "https://example.com/metadata/";
+
+        vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.EmptyName.selector));
+        new PhygitalAssets(owner, "", symbol, uri);
+    }
+
+    // Test deployment with empty symbol
+    function testConstructorWithEmptySymbol() public {
+        vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.EmptySymbol.selector));
+        address ow = address(0x123);
+        address zeroAddress = address(0);
+        string memory name = "PhygitalAssets";
+        string memory symbol = "PGA";
+        string memory uri = "https://example.com/metadata/";
+        new PhygitalAssets(owner, name, "", uri);
+    }
+
+    // Test deployment with empty URI
+    function testConstructorWithEmptyURI() public {
+        address ow = address(0x123);
+        address zeroAddress = address(0);
+        string memory name = "PhygitalAssets";
+        string memory symbol = "PGA";
+        string memory uri = "https://example.com/metadata/";
+        // Empty URI is allowed, so this should not revert
+        vm.prank(owner);
+        PhygitalAssets phygitalAssets2 = new PhygitalAssets(owner, name, symbol, "");
+
+        // Check if the contract was initialized correctly
+        assertEq(phygitalAssets2.owner(), owner);
+        assertEq(phygitalAssets2.name(), name);
+        assertEq(phygitalAssets2.symbol(), symbol);
+        assertEq(phygitalAssets2.contractURI(), "");
+    }
+
+    //
     function testCreateAsset() public {
         //createAsset(string memory _name, string calldata _uri, uint256 _maxSupply, bool _supplyCapped)
         phygitalAssets.createAsset(1, "Arte Exclusiva", "ipfs://metadata1", 100, true);
@@ -140,7 +211,7 @@ contract PhygitalAssetsTest is Test {
 
     //Supports interface test
     // Test supportsInterface for ERC1155
-    function testSupportsInterfaceERC1155() public view  {
+    function testSupportsInterfaceERC1155() public view {
         // ERC1155 interface ID
         bytes4 interfaceIdERC1155 = type(IERC1155).interfaceId;
         assertTrue(phygitalAssets.supportsInterface(interfaceIdERC1155));
