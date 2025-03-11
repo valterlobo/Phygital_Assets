@@ -7,18 +7,31 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./PhygitalAssetsStruct.sol";
 
+/**
+ * @title PhygitalAssets
+ * @dev Contrato ERC1155 para gerenciamento de ativos físicos e digitais (phygital).
+ * Permite a criação, mintagem e gerenciamento de ativos com supply limitado ou ilimitado.
+ * O contrato é controlado pelo proprietário (Owner) e utiliza o padrão ERC1155 para tokens.
+ */
 contract PhygitalAssets is ERC1155, Ownable {
+    // Nome do contrato de token
     string public name;
+
+    // Símbolo do contrato de token
     string public symbol;
+
+    // URI base para metadados do contrato
     string public uriAssets;
 
+    // Mapeamento de tokenId para a estrutura do ativo (Asset)
     mapping(uint256 => Asset) private assets;
 
+    // Eventos
     event AssetCreated(uint256 indexed tokenId, string name, uint256 maxSupply, bool supplyCapped);
     event AssetMinted(uint256 indexed tokenId, address indexed to, uint256 amount);
     event UriUpdated(uint256 indexed tokenId, string newUri);
 
-    // Definição dos erros personalizados
+    // Erros personalizados
     error AssetAlreadyExists(uint256 tokenId);
     error AssetDoesNotExist(uint256 tokenId);
     error MaxSupplyExceeded(uint256 tokenId, uint256 maxSupply, uint256 requestedAmount);
@@ -28,6 +41,10 @@ contract PhygitalAssets is ERC1155, Ownable {
     error AmountOverflow();
     error InvalidAmount();
 
+    /**
+     * @dev Modificador para verificar se um ativo existe.
+     * @param id ID do token a ser verificado.
+     */
     modifier activeAsset(uint256 id) {
         if (!_exists(id)) {
             revert AssetDoesNotExist(id);
@@ -35,6 +52,14 @@ contract PhygitalAssets is ERC1155, Ownable {
         _;
     }
 
+    /**
+     * @dev Construtor do contrato.
+     * @param initialOwner Endereço do proprietário inicial do contrato.
+     * @param nameAssets Nome do contrato de token.
+     * @param symbolAssets Símbolo do contrato de token.
+     * @param uriContract URI base para metadados do contrato.
+     * @notice Reverte se o `initialOwner` for o endereço zero, ou se `nameAssets` ou `symbolAssets` forem vazios.
+     */
     constructor(address initialOwner, string memory nameAssets, string memory symbolAssets, string memory uriContract)
         ERC1155("")
         Ownable(initialOwner)
@@ -47,6 +72,16 @@ contract PhygitalAssets is ERC1155, Ownable {
         uriAssets = uriContract;
     }
 
+    /**
+     * @dev Cria um novo ativo.
+     * @param tokenId ID único do token.
+     * @param nm Nome do ativo.
+     * @param ur URI do ativo.
+     * @param maxSupply Supply máximo do ativo (ignorado se `supplyCapped` for false).
+     * @param supplyCapped Indica se o supply do ativo é limitado.
+     * @notice Reverte se o ativo já existir ou se o `tokenId` já estiver em uso.
+     * @notice Apenas o proprietário pode chamar esta função.
+     */
     function createAsset(uint256 tokenId, string calldata nm, string calldata ur, uint256 maxSupply, bool supplyCapped)
         external
         onlyOwner
@@ -60,12 +95,25 @@ contract PhygitalAssets is ERC1155, Ownable {
         emit AssetCreated(tokenId, nm, maxSupply, supplyCapped);
     }
 
+    /**
+     * @dev Retorna os detalhes de um ativo.
+     * @param tokenId ID do token.
+     * @return Asset Estrutura do ativo correspondente ao `tokenId`.
+     * @notice Reverte se o ativo não existir.
+     */
     function getAsset(uint256 tokenId) external view returns (Asset memory) {
         return assets[tokenId];
     }
 
+    /**
+     * @dev Minta tokens de um ativo para um endereço específico.
+     * @param tokenId ID do token.
+     * @param to Endereço que receberá os tokens.
+     * @param amount Quantidade de tokens a serem mintados.
+     * @notice Reverte se o ativo não existir, se o `amount` for zero, ou se o supply máximo for excedido.
+     * @notice Apenas o proprietário pode chamar esta função.
+     */
     function mintAsset(uint256 tokenId, address to, uint256 amount) external onlyOwner activeAsset(tokenId) {
-
         if (amount == 0) revert InvalidAmount();
 
         if (assets[tokenId].supplyCapped) {
@@ -83,10 +131,24 @@ contract PhygitalAssets is ERC1155, Ownable {
         emit AssetMinted(tokenId, to, amount);
     }
 
+    /**
+     * @dev Retorna a URI de um ativo.
+     * @param tokenId ID do token.
+     * @return string URI do ativo.
+     * @notice Reverte se o ativo não existir.
+     */
     function uri(uint256 tokenId) public view override(ERC1155) activeAsset(tokenId) returns (string memory) {
         return assets[tokenId].uri;
     }
 
+    /**
+     * @dev Atualiza a URI de um ativo.
+     * @param tokenId ID do token.
+     * @param newUri Nova URI do ativo.
+     * @return string URI atualizada.
+     * @notice Reverte se o ativo não existir.
+     * @notice Apenas o proprietário pode chamar esta função.
+     */
     function setUri(uint256 tokenId, string calldata newUri)
         external
         onlyOwner
@@ -98,14 +160,28 @@ contract PhygitalAssets is ERC1155, Ownable {
         return assets[tokenId].uri;
     }
 
+    /**
+     * @dev Retorna a URI do contrato.
+     * @return string URI do contrato.
+     */
     function contractURI() public view returns (string memory) {
         return uriAssets;
     }
 
+    /**
+     * @dev Verifica se o contrato suporta uma interface específica.
+     * @param interfaceId ID da interface a ser verificada.
+     * @return bool True se a interface for suportada, false caso contrário.
+     */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @dev Verifica se um ativo existe.
+     * @param id ID do token.
+     * @return bool True se o ativo existir, false caso contrário.
+     */
     function _exists(uint256 id) internal view virtual returns (bool) {
         return (bytes(assets[id].name).length > 0);
     }
