@@ -30,6 +30,8 @@ contract PhygitalAssets is ERC1155, Ownable {
     event AssetCreated(uint256 indexed tokenId, string name, uint256 maxSupply, bool supplyCapped);
     event AssetMinted(uint256 indexed tokenId, address indexed to, uint256 amount);
     event UriUpdated(uint256 indexed tokenId, string newUri);
+    event AssetRemoved(uint256 indexed tokenId);
+    event AssetMintedBatch(uint256[] tokenIds, address to, uint256[] amounts);
 
     // Erros personalizados
     error AssetAlreadyExists(uint256 tokenId);
@@ -40,6 +42,10 @@ contract PhygitalAssets is ERC1155, Ownable {
     error EmptySymbol();
     error AmountOverflow();
     error InvalidAmount();
+    error CannotRemoveAssetWithMintedTokens(uint256 tokenId);
+    error InvalidURI();
+    error InvalidAddress();
+    error ArrayLengthMismatch();
 
     /**
      * @dev Modificador para verificar se um ativo existe.
@@ -90,6 +96,10 @@ contract PhygitalAssets is ERC1155, Ownable {
             revert AssetAlreadyExists(tokenId);
         }
 
+        if (bytes(ur).length == 0) {
+            revert InvalidURI();
+        }
+
         assets[tokenId] =
             Asset({id: tokenId, name: nm, totalSupply: 0, maxSupply: maxSupply, supplyCapped: supplyCapped, uri: ur});
         emit AssetCreated(tokenId, nm, maxSupply, supplyCapped);
@@ -106,6 +116,25 @@ contract PhygitalAssets is ERC1155, Ownable {
     }
 
     /**
+     * @dev Remove um ativo existente.
+     * @param tokenId ID do token a ser removido.
+     * @notice Reverte se o ativo não existir ou se houver tokens mintados (`totalSupply > 0`).
+     * @notice Apenas o proprietário pode chamar esta função.
+     */
+    function removeAsset(uint256 tokenId) external onlyOwner activeAsset(tokenId) {
+        // Verifica se há tokens mintados para o ativo
+        if (assets[tokenId].totalSupply > 0) {
+            revert CannotRemoveAssetWithMintedTokens(tokenId);
+        }
+
+        // Remove o ativo do mapeamento
+        delete assets[tokenId];
+
+        // Emite um evento para indicar que o ativo foi removido
+        emit AssetRemoved(tokenId);
+    }
+
+    /**
      * @dev Minta tokens de um ativo para um endereço específico.
      * @param tokenId ID do token.
      * @param to Endereço que receberá os tokens.
@@ -115,6 +144,7 @@ contract PhygitalAssets is ERC1155, Ownable {
      */
     function mintAsset(uint256 tokenId, address to, uint256 amount) external onlyOwner activeAsset(tokenId) {
         if (amount == 0) revert InvalidAmount();
+        if (to == address(0)) revert InvalidAddress();
 
         if (assets[tokenId].supplyCapped) {
             if (assets[tokenId].totalSupply + amount > assets[tokenId].maxSupply) {
@@ -122,13 +152,55 @@ contract PhygitalAssets is ERC1155, Ownable {
             }
         }
 
+        _mint(to, tokenId, amount, "");
+
         assets[tokenId].totalSupply += amount;
         if (!assets[tokenId].supplyCapped) {
             assets[tokenId].maxSupply = assets[tokenId].totalSupply;
         }
-
-        _mint(to, tokenId, amount, "");
         emit AssetMinted(tokenId, to, amount);
+    }
+
+    /**
+     * @dev Minta tokens de múltiplos ativos para múltiplos endereços em uma única transação.
+     * @param tokenIds IDs dos tokens.
+     * @param to Endereços que receberão os tokens.
+     * @param amounts Quantidades de tokens a serem mintados.
+     * @notice Reverte se os arrays tiverem comprimentos diferentes, se algum ativo não existir, se algum endereço for inválido ou se o supply máximo for excedido.
+     * @notice Apenas o proprietário pode chamar esta função.
+     */
+    function mintAssetBatch(uint256[] calldata tokenIds, address to, uint256[] calldata amounts) external onlyOwner {
+        if (tokenIds.length != amounts.length) {
+            revert ArrayLengthMismatch();
+        }
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (!_exists(tokenIds[i])) {
+                revert AssetDoesNotExist(tokenIds[i]);
+            }
+            if (to == address(0)) {
+                revert InvalidAddress();
+            }
+            if (amounts[i] == 0) {
+                revert InvalidAmount();
+            }
+
+            if (assets[tokenIds[i]].supplyCapped) {
+                if (assets[tokenIds[i]].totalSupply + amounts[i] > assets[tokenIds[i]].maxSupply) {
+                    revert MaxSupplyExceeded(tokenIds[i], assets[tokenIds[i]].maxSupply, amounts[i]);
+                }
+            }
+        }
+
+        _mintBatch(to, tokenIds, amounts, "");
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            assets[tokenIds[i]].totalSupply += amounts[i];
+            if (!assets[tokenIds[i]].supplyCapped) {
+                assets[tokenIds[i]].maxSupply = assets[tokenIds[i]].totalSupply;
+            }
+        }
+        emit AssetMintedBatch(tokenIds, to, amounts);
     }
 
     /**
@@ -155,6 +227,9 @@ contract PhygitalAssets is ERC1155, Ownable {
         activeAsset(tokenId)
         returns (string memory)
     {
+        if (bytes(newUri).length == 0) {
+            revert InvalidURI();
+        }
         assets[tokenId].uri = newUri;
         emit UriUpdated(tokenId, newUri);
         return assets[tokenId].uri;
