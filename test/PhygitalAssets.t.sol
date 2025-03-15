@@ -77,16 +77,10 @@ contract PhygitalAssetsTest is Test {
         address zeroAddress = address(0);
         string memory name = "PhygitalAssets";
         string memory symbol = "PGA";
-        string memory uri = "https://example.com/metadata/";
         // Empty URI is allowed, so this should not revert
         vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.InvalidURI.selector));
         PhygitalAssets phygitalAssets2 = new PhygitalAssets(owner, name, symbol, "");
-
-        // Check if the contract was initialized correctly
-        assertEq(phygitalAssets2.owner(), owner);
-        assertEq(phygitalAssets2.name(), name);
-        assertEq(phygitalAssets2.symbol(), symbol);
-        assertEq(phygitalAssets2.contractURI(), "");
     }
 
     //

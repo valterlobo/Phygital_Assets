@@ -73,6 +73,7 @@ contract PhygitalAssets is ERC1155, Ownable {
         if (initialOwner == address(0)) revert InvalidOwner();
         if (bytes(nameAssets).length == 0) revert EmptyName();
         if (bytes(symbolAssets).length == 0) revert EmptySymbol();
+        if (bytes(uriContract).length == 0) revert InvalidURI();
         name = nameAssets;
         symbol = symbolAssets;
         uriAssets = uriContract;
@@ -92,13 +93,10 @@ contract PhygitalAssets is ERC1155, Ownable {
         external
         onlyOwner
     {
-        if (_exists(tokenId)) {
-            revert AssetAlreadyExists(tokenId);
-        }
-
-        if (bytes(ur).length == 0) {
-            revert InvalidURI();
-        }
+        if (_exists(tokenId)) revert AssetAlreadyExists(tokenId);
+        if (bytes(ur).length == 0) revert InvalidURI();
+        if (bytes(nm).length == 0) revert EmptyName();
+        if (supplyCapped && maxSupply == 0) revert InvalidAmount();
 
         assets[tokenId] =
             Asset({id: tokenId, name: nm, totalSupply: 0, maxSupply: maxSupply, supplyCapped: supplyCapped, uri: ur});
@@ -152,12 +150,13 @@ contract PhygitalAssets is ERC1155, Ownable {
             }
         }
 
-        _mint(to, tokenId, amount, "");
-
         assets[tokenId].totalSupply += amount;
         if (!assets[tokenId].supplyCapped) {
             assets[tokenId].maxSupply = assets[tokenId].totalSupply;
         }
+
+        _mint(to, tokenId, amount, "");
+
         emit AssetMinted(tokenId, to, amount);
     }
 
@@ -192,14 +191,15 @@ contract PhygitalAssets is ERC1155, Ownable {
             }
         }
 
-        _mintBatch(to, tokenIds, amounts, "");
-
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assets[tokenIds[i]].totalSupply += amounts[i];
             if (!assets[tokenIds[i]].supplyCapped) {
                 assets[tokenIds[i]].maxSupply = assets[tokenIds[i]].totalSupply;
             }
         }
+
+        _mintBatch(to, tokenIds, amounts, "");
+
         emit AssetMintedBatch(tokenIds, to, amounts);
     }
 
@@ -227,9 +227,10 @@ contract PhygitalAssets is ERC1155, Ownable {
         activeAsset(tokenId)
         returns (string memory)
     {
-        if (bytes(newUri).length == 0) {
+        if (bytes(newUri).length == 0 || keccak256(bytes(newUri)) == keccak256(bytes(assets[tokenId].uri))) {
             revert InvalidURI();
         }
+
         assets[tokenId].uri = newUri;
         emit UriUpdated(tokenId, newUri);
         return assets[tokenId].uri;
@@ -258,6 +259,6 @@ contract PhygitalAssets is ERC1155, Ownable {
      * @return bool True se o ativo existir, false caso contrário.
      */
     function _exists(uint256 id) internal view virtual returns (bool) {
-        return (bytes(assets[id].name).length > 0);
+        return (bytes(assets[id].name).length > 0 && assets[id].id == id);
     }
 }
