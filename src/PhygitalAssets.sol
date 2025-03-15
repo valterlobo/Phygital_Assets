@@ -28,9 +28,9 @@ contract PhygitalAssets is ERC1155, Ownable {
 
     // Eventos
     event AssetCreated(uint256 indexed tokenId, string name, uint256 maxSupply, bool supplyCapped);
+    event AssetRemoved(uint256 indexed tokenId);
     event AssetMinted(uint256 indexed tokenId, address indexed to, uint256 amount);
     event UriUpdated(uint256 indexed tokenId, string newUri);
-    event AssetRemoved(uint256 indexed tokenId);
     event AssetMintedBatch(uint256[] tokenIds, address to, uint256[] amounts);
 
     // Erros personalizados
