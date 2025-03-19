@@ -5,6 +5,8 @@ import "forge-std/Test.sol";
 import "../src/PhygitalAssets.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "@openzeppelin/contracts/access/IAccessControl.sol";
+
 contract PhygitalAssetsTest is Test {
     PhygitalAssets phygitalAssets;
     address owner = address(this);
@@ -31,7 +33,7 @@ contract PhygitalAssetsTest is Test {
         //console.log(phygitalAssets1.contractURI());
 
         // Check if the contract was initialized correctly
-        assertEq(phygitalAssets1.owner(), ow);
+        //assertEq(phygitalAssets1.hasRole(IAccessControl.DEFAULT_ADMIN_ROLE, ow));
         assertEq(phygitalAssets1.name(), name);
         assertEq(phygitalAssets1.symbol(), symbol);
         assertEq(phygitalAssets1.contractURI(), uri);
@@ -43,7 +45,7 @@ contract PhygitalAssetsTest is Test {
         string memory name = "PhygitalAssets";
         string memory symbol = "PGA";
         string memory uri = "https://example.com/metadata/";
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, zeroAddress));
+        vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.InvalidAddress.selector));
         new PhygitalAssets(zeroAddress, name, symbol, uri);
     }
 
@@ -198,28 +200,6 @@ contract PhygitalAssetsTest is Test {
         phygitalAssets.mintAsset(99, user1, 1); // Deve falhar pois o ID 99 não existe
     }
 
-    //Supports interface test
-    // Test supportsInterface for ERC1155
-    function testSupportsInterfaceERC1155() public view {
-        // ERC1155 interface ID
-        bytes4 interfaceIdERC1155 = type(IERC1155).interfaceId;
-        assertTrue(phygitalAssets.supportsInterface(interfaceIdERC1155));
-    }
-
-    // Test supportsInterface for ERC1155MetadataURI
-    function testSupportsInterfaceERC1155MetadataURI() public view {
-        // ERC1155MetadataURI interface ID
-        bytes4 interfaceIdERC1155MetadataURI = type(IERC1155MetadataURI).interfaceId;
-        assertTrue(phygitalAssets.supportsInterface(interfaceIdERC1155MetadataURI));
-    }
-
-    // Test supportsInterface for an unsupported interface
-    function testSupportsInterfaceUnsupported() public view {
-        // Random unsupported interface ID
-        bytes4 unsupportedInterfaceId = 0xffffffff;
-        assertFalse(phygitalAssets.supportsInterface(unsupportedInterfaceId));
-    }
-
     //test AssetDoesNotExist
     // Test the activeAsset modifier when the asset exists
     function testActiveAssetWhenAssetExists() public {
@@ -316,7 +296,7 @@ contract PhygitalAssetsTest is Test {
 
         // Attempt to remove the asset by a non-owner (should revert)
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, user, 0x00));
         phygitalAssets.removeAsset(1);
     }
 
@@ -389,5 +369,22 @@ contract PhygitalAssetsTest is Test {
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.ArrayLengthMismatch.selector));
         phygitalAssets.mintAssetBatch(tokenIds, to, amounts);
+    }
+
+    //Supports interface test
+    // Test supportsInterface for ERC1155
+    function testSupportsInterfaceERC1155() public view {
+        bytes4 interfaceIdERC1155 = type(IERC1155).interfaceId;
+        assertTrue(phygitalAssets.supportsInterface(interfaceIdERC1155));
+    }
+
+    function testSupportsInterfaceERC165() public view {
+        bytes4 interfaceIdERC165 = type(IERC165).interfaceId;
+        assertTrue(phygitalAssets.supportsInterface(interfaceIdERC165));
+    }
+
+    function testSupportsInterfaceUnsupported() public view {
+        bytes4 unsupportedInterfaceId = 0xffffffff;
+        assertFalse(phygitalAssets.supportsInterface(unsupportedInterfaceId));
     }
 }

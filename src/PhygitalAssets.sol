@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./PhygitalAssetsStruct.sol";
 
 /**
@@ -14,7 +14,7 @@ import "./PhygitalAssetsStruct.sol";
  * Permite a criação, mintagem e gerenciamento de ativos com supply limitado ou ilimitado.
  * O contrato é controlado pelo proprietário (Owner) e utiliza o padrão ERC1155 para tokens.
  */
-contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
+contract PhygitalAssets is ERC1155, AccessControl, ReentrancyGuard {
     // Nome do contrato de token
     string public name;
 
@@ -24,8 +24,14 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
     // URI base para metadados do contrato
     string public uriAssets;
 
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
     // Mapeamento de tokenId para a estrutura do ativo (Asset)
     mapping(uint256 => Asset) private assets;
+
+    mapping(uint256 => string[]) private assetUriHistory;
+
+    uint256 public constant MAX_URI_HISTORY = 5;
 
     // Eventos
     event AssetCreated(uint256 indexed tokenId, string name, uint256 maxSupply, bool supplyCapped);
@@ -33,12 +39,13 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
     event AssetMinted(uint256 indexed tokenId, address indexed to, uint256 amount);
     event UriUpdated(uint256 indexed tokenId, string newUri);
     event AssetMintedBatch(uint256[] tokenIds, address to, uint256[] amounts);
+    event MinterRoleGranted(address indexed account);
+    event MinterRoleRevoked(address indexed account);
 
     // Erros personalizados
     error AssetAlreadyExists(uint256 tokenId);
     error AssetDoesNotExist(uint256 tokenId);
     error MaxSupplyExceeded(uint256 tokenId, uint256 maxSupply, uint256 requestedAmount);
-    error InvalidOwner();
     error EmptyName();
     error EmptySymbol();
     error AmountOverflow();
@@ -69,15 +76,16 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      */
     constructor(address initialOwner, string memory nameAssets, string memory symbolAssets, string memory uriContract)
         ERC1155("")
-        Ownable(initialOwner)
     {
-        if (initialOwner == address(0)) revert InvalidOwner();
+        if (initialOwner == address(0)) revert InvalidAddress();
         if (bytes(nameAssets).length == 0) revert EmptyName();
         if (bytes(symbolAssets).length == 0) revert EmptySymbol();
         if (bytes(uriContract).length == 0) revert InvalidURI();
         name = nameAssets;
         symbol = symbolAssets;
         uriAssets = uriContract;
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(MINTER_ROLE, initialOwner);
     }
 
     /**
@@ -92,7 +100,8 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      */
     function createAsset(uint256 tokenId, string calldata nm, string calldata ur, uint256 maxSupply, bool supplyCapped)
         external
-        onlyOwner
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        nonReentrant
     {
         if (_exists(tokenId)) revert AssetAlreadyExists(tokenId);
         if (bytes(ur).length == 0) revert InvalidURI();
@@ -120,7 +129,7 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      * @notice Reverte se o ativo não existir ou se houver tokens mintados (`totalSupply > 0`).
      * @notice Apenas o proprietário pode chamar esta função.
      */
-    function removeAsset(uint256 tokenId) external onlyOwner activeAsset(tokenId) {
+    function removeAsset(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) activeAsset(tokenId) nonReentrant {
         // Verifica se há tokens mintados para o ativo
         if (assets[tokenId].totalSupply > 0) {
             revert CannotRemoveAssetWithMintedTokens(tokenId);
@@ -143,22 +152,23 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      */
     function mintAsset(uint256 tokenId, address to, uint256 amount)
         external
-        onlyOwner
+        onlyRole(MINTER_ROLE)
         activeAsset(tokenId)
         nonReentrant
     {
         if (amount == 0) revert InvalidAmount();
         if (to == address(0)) revert InvalidAddress();
+        Asset storage asset = assets[tokenId];
 
-        if (assets[tokenId].supplyCapped) {
-            if (assets[tokenId].totalSupply + amount > assets[tokenId].maxSupply) {
-                revert MaxSupplyExceeded(tokenId, assets[tokenId].maxSupply, amount);
+        if (asset.supplyCapped) {
+            if (asset.totalSupply + amount > asset.maxSupply) {
+                revert MaxSupplyExceeded(tokenId, asset.maxSupply, amount);
             }
         }
 
-        assets[tokenId].totalSupply += amount;
-        if (!assets[tokenId].supplyCapped) {
-            assets[tokenId].maxSupply = assets[tokenId].totalSupply;
+        asset.totalSupply += amount;
+        if (!asset.supplyCapped) {
+            asset.maxSupply = asset.totalSupply;
         }
 
         _mint(to, tokenId, amount, "");
@@ -176,7 +186,7 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      */
     function mintAssetBatch(uint256[] calldata tokenIds, address to, uint256[] calldata amounts)
         external
-        onlyOwner
+        onlyRole(MINTER_ROLE)
         nonReentrant
     {
         if (tokenIds.length != amounts.length) {
@@ -224,22 +234,39 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Atualiza a URI de um ativo.
+     * @dev Retorna o histórico de URIs de um ativo.
+     * @param tokenId ID do token.
+     * @return string[] Array com o histórico de URIs.
+     */
+    function getUriHistory(uint256 tokenId) external view returns (string[] memory) {
+        return assetUriHistory[tokenId];
+    }
+
+    /**
+     * @dev Atualiza a URI de um ativo e mantém um histórico limitado.
      * @param tokenId ID do token.
      * @param newUri Nova URI do ativo.
      * @return string URI atualizada.
-     * @notice Reverte se o ativo não existir.
-     * @notice Apenas o proprietário pode chamar esta função.
      */
     function setUri(uint256 tokenId, string calldata newUri)
         external
-        onlyOwner
+        onlyRole(DEFAULT_ADMIN_ROLE)
         activeAsset(tokenId)
+        nonReentrant
         returns (string memory)
     {
         if (bytes(newUri).length == 0 || keccak256(bytes(newUri)) == keccak256(bytes(assets[tokenId].uri))) {
             revert InvalidURI();
         }
+
+        string[] storage history = assetUriHistory[tokenId];
+        if (history.length >= MAX_URI_HISTORY) {
+            for (uint256 i = 0; i < history.length - 1; i++) {
+                history[i] = history[i + 1];
+            }
+            history.pop();
+        }
+        history.push(assets[tokenId].uri);
 
         assets[tokenId].uri = newUri;
         emit UriUpdated(tokenId, newUri);
@@ -254,13 +281,32 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
         return uriAssets;
     }
 
+    // Permite que o admin conceda permissões para outros endereços
+    function grantMinterRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        _grantRole(MINTER_ROLE, account);
+        emit MinterRoleGranted(account);
+    }
+
+    function revokeMinterRole(address account) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant {
+        _revokeRole(MINTER_ROLE, account);
+        emit MinterRoleRevoked(account);
+    }
+
     /**
      * @dev Verifica se o contrato suporta uma interface específica.
      * @param interfaceId ID da interface a ser verificada.
      * @return bool True se a interface for suportada, false caso contrário.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155) returns (bool) {
-        return super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155, AccessControl)
+        returns (bool)
+    {
+        // Verifica se a interface é IERC1155 ,AccessControl
+        return interfaceId == type(IERC1155MetadataURI).interfaceId || interfaceId == type(IERC1155).interfaceId
+            || interfaceId == type(AccessControl).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
@@ -269,6 +315,6 @@ contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
      * @return bool True se o ativo existir, false caso contrário.
      */
     function _exists(uint256 id) internal view virtual returns (bool) {
-        return (bytes(assets[id].name).length > 0 && assets[id].id == id);
+        return assets[id].id == id;
     }
 }

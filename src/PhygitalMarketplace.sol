@@ -91,7 +91,7 @@ contract PhygitalMarketplace is ERC1155Holder, Ownable, ReentrancyGuard {
         if (seller == address(0)) revert InvalidAddress();
 
         payable(seller).transfer(msg.value);
-        //phygitalAssets.safeTransferFrom(address(this), msg.sender, tokenId, amount, "");
+        phygitalAssets.safeTransferFrom(address(this), msg.sender, tokenId, amount, "");
 
         listing.amount -= amount;
         if (listing.amount == 0) {
@@ -107,7 +107,7 @@ contract PhygitalMarketplace is ERC1155Holder, Ownable, ReentrancyGuard {
         (bool success,) = recipient.call{value: amount}("");
         require(success, "Transfer failed");
     }
-    /*
+
     function buyItemWithERC20(uint256 tokenId, address seller, uint256 amount, address currency)
         external
         nonReentrant
@@ -131,7 +131,7 @@ contract PhygitalMarketplace is ERC1155Holder, Ownable, ReentrancyGuard {
         }
 
         emit ItemSold(msg.sender, seller, tokenId, amount, totalPrice, currency);
-    }*/
+    }
 
     function removeListing(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId][msg.sender];
