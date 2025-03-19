@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./PhygitalAssetsStruct.sol";
 
@@ -13,7 +14,7 @@ import "./PhygitalAssetsStruct.sol";
  * Permite a criação, mintagem e gerenciamento de ativos com supply limitado ou ilimitado.
  * O contrato é controlado pelo proprietário (Owner) e utiliza o padrão ERC1155 para tokens.
  */
-contract PhygitalAssets is ERC1155, Ownable {
+contract PhygitalAssets is ERC1155, Ownable, ReentrancyGuard {
     // Nome do contrato de token
     string public name;
 
@@ -140,7 +141,12 @@ contract PhygitalAssets is ERC1155, Ownable {
      * @notice Reverte se o ativo não existir, se o `amount` for zero, ou se o supply máximo for excedido.
      * @notice Apenas o proprietário pode chamar esta função.
      */
-    function mintAsset(uint256 tokenId, address to, uint256 amount) external onlyOwner activeAsset(tokenId) {
+    function mintAsset(uint256 tokenId, address to, uint256 amount)
+        external
+        onlyOwner
+        activeAsset(tokenId)
+        nonReentrant
+    {
         if (amount == 0) revert InvalidAmount();
         if (to == address(0)) revert InvalidAddress();
 
@@ -168,7 +174,11 @@ contract PhygitalAssets is ERC1155, Ownable {
      * @notice Reverte se os arrays tiverem comprimentos diferentes, se algum ativo não existir, se algum endereço for inválido ou se o supply máximo for excedido.
      * @notice Apenas o proprietário pode chamar esta função.
      */
-    function mintAssetBatch(uint256[] calldata tokenIds, address to, uint256[] calldata amounts) external onlyOwner {
+    function mintAssetBatch(uint256[] calldata tokenIds, address to, uint256[] calldata amounts)
+        external
+        onlyOwner
+        nonReentrant
+    {
         if (tokenIds.length != amounts.length) {
             revert ArrayLengthMismatch();
         }

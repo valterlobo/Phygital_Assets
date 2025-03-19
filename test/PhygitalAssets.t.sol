@@ -21,15 +21,14 @@ contract PhygitalAssetsTest is Test {
     // Test successful deployment with valid parameters
     function testConstructorSuccess() public {
         address ow = address(0x123);
-        address zeroAddress = address(0);
         string memory name = "PhygitalAssets";
         string memory symbol = "PGA";
         string memory uri = "https://example.com/metadata/";
         vm.prank(owner);
         PhygitalAssets phygitalAssets1 = new PhygitalAssets(ow, name, symbol, uri);
 
-        console.log("--------------------------------");
-        console.log(phygitalAssets1.contractURI());
+        //console.log("--------------------------------");
+        //console.log(phygitalAssets1.contractURI());
 
         // Check if the contract was initialized correctly
         assertEq(phygitalAssets1.owner(), ow);
@@ -50,9 +49,6 @@ contract PhygitalAssetsTest is Test {
 
     // Test deployment with empty name
     function testConstructorWithEmptyName() public {
-        address ow = address(0x123);
-        address zeroAddress = address(0);
-        string memory name = "PhygitalAssets";
         string memory symbol = "PGA";
         string memory uri = "https://example.com/metadata/";
 
@@ -63,24 +59,19 @@ contract PhygitalAssetsTest is Test {
     // Test deployment with empty symbol
     function testConstructorWithEmptySymbol() public {
         vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.EmptySymbol.selector));
-        address ow = address(0x123);
-        address zeroAddress = address(0);
         string memory name = "PhygitalAssets";
-        string memory symbol = "PGA";
         string memory uri = "https://example.com/metadata/";
         new PhygitalAssets(owner, name, "", uri);
     }
 
     // Test deployment with empty URI
     function testConstructorWithEmptyURI() public {
-        address ow = address(0x123);
-        address zeroAddress = address(0);
         string memory name = "PhygitalAssets";
         string memory symbol = "PGA";
         // Empty URI is allowed, so this should not revert
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(PhygitalAssets.InvalidURI.selector));
-        PhygitalAssets phygitalAssets2 = new PhygitalAssets(owner, name, symbol, "");
+        new PhygitalAssets(owner, name, symbol, "");
     }
 
     //
@@ -216,14 +207,14 @@ contract PhygitalAssetsTest is Test {
     }
 
     // Test supportsInterface for ERC1155MetadataURI
-    function testSupportsInterfaceERC1155MetadataURI() public {
+    function testSupportsInterfaceERC1155MetadataURI() public view {
         // ERC1155MetadataURI interface ID
         bytes4 interfaceIdERC1155MetadataURI = type(IERC1155MetadataURI).interfaceId;
         assertTrue(phygitalAssets.supportsInterface(interfaceIdERC1155MetadataURI));
     }
 
     // Test supportsInterface for an unsupported interface
-    function testSupportsInterfaceUnsupported() public {
+    function testSupportsInterfaceUnsupported() public view {
         // Random unsupported interface ID
         bytes4 unsupportedInterfaceId = 0xffffffff;
         assertFalse(phygitalAssets.supportsInterface(unsupportedInterfaceId));
