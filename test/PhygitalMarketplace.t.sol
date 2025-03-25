@@ -33,7 +33,6 @@ contract PhygitalMarketplaceTest is Test {
         phygitalAssets.setApprovalForAll(address(marketplace), true);
     }
 
-    /*
     function testListItem() public {
         vm.prank(seller);
         marketplace.listItem(tokenId, 2, price);
@@ -46,7 +45,24 @@ contract PhygitalMarketplaceTest is Test {
         assertTrue(active);
     }
 
-    function testBuyItem() public {
+    function testRemoveListing() public {
+        vm.prank(seller);
+        marketplace.listItem(tokenId, 3, price);
+        assertEq(phygitalAssets.balanceOf(seller, tokenId), 2);
+
+        vm.prank(seller);
+        marketplace.removeListing(tokenId);
+
+        (,, uint256 remainingAmount, bool active) = marketplace.listings(tokenId, seller);
+
+        assertEq(remainingAmount, 0);
+        assertFalse(active);
+        assertEq(phygitalAssets.balanceOf(seller, tokenId), 5);
+        //console.log(phygitalAssets.balanceOf(seller, tokenId));
+        //console.log(phygitalAssets.balanceOf(address(marketplace), tokenId));
+    }
+
+    /*function testBuyItem() public {
         vm.prank(seller);
         marketplace.listItem(tokenId, 2, price);
 
@@ -72,17 +88,5 @@ contract PhygitalMarketplaceTest is Test {
         marketplace.buyItem{value: 0.5 ether}(tokenId, seller, 1); // Deve falhar pois enviou ETH errado
     }
 
-    function testRemoveListing() public {
-        vm.prank(seller);
-        marketplace.listItem(tokenId, 3, price);
-
-        vm.prank(seller);
-        marketplace.removeListing(tokenId);
-
-        (,, uint256 remainingAmount, bool active) = marketplace.listings(tokenId, seller);
-
-        assertEq(remainingAmount, 0);
-        assertFalse(active);
-        assertEq(phygitalAssets.balanceOf(seller, tokenId), 5);
-    }*/
+    */
 }

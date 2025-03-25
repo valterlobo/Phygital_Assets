@@ -33,6 +33,8 @@ contract PhygitalAssets is ERC1155, AccessControl, ReentrancyGuard {
 
     uint256 public constant MAX_URI_HISTORY = 5;
 
+    uint256 public constant MAX_BATCH_SIZE = 100;
+
     // Eventos
     event AssetCreated(uint256 indexed tokenId, string name, uint256 maxSupply, bool supplyCapped);
     event AssetRemoved(uint256 indexed tokenId);
@@ -86,6 +88,7 @@ contract PhygitalAssets is ERC1155, AccessControl, ReentrancyGuard {
         uriAssets = uriContract;
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
         _grantRole(MINTER_ROLE, initialOwner);
+        assetUriHistory[0].push("");
     }
 
     /**
@@ -189,6 +192,8 @@ contract PhygitalAssets is ERC1155, AccessControl, ReentrancyGuard {
         onlyRole(MINTER_ROLE)
         nonReentrant
     {
+        require(tokenIds.length <= MAX_BATCH_SIZE, "Batch too large");
+
         if (tokenIds.length != amounts.length) {
             revert ArrayLengthMismatch();
         }
@@ -267,7 +272,6 @@ contract PhygitalAssets is ERC1155, AccessControl, ReentrancyGuard {
             history.pop();
         }
         history.push(assets[tokenId].uri);
-
         assets[tokenId].uri = newUri;
         emit UriUpdated(tokenId, newUri);
         return assets[tokenId].uri;

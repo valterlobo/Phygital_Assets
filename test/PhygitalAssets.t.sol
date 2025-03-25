@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
 import "../src/PhygitalAssets.sol";
@@ -31,8 +31,7 @@ contract PhygitalAssetsTest is Test {
 
         //console.log("--------------------------------");
         //console.log(phygitalAssets1.contractURI());
-
-        // Check if the contract was initialized correctly
+        //Check if the contract was initialized correctly
         //assertEq(phygitalAssets1.hasRole(IAccessControl.DEFAULT_ADMIN_ROLE, ow));
         assertEq(phygitalAssets1.name(), name);
         assertEq(phygitalAssets1.symbol(), symbol);
@@ -186,6 +185,8 @@ contract PhygitalAssetsTest is Test {
 
         // Check if the URI was updated
         assertEq(phygitalAssets.uri(1), "https://example.com/new-uri");
+
+        console.log(phygitalAssets.getUriHistory(1)[0]);
     }
 
     // Test contractURI
